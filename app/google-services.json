@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "775568792435",
+    "project_id": "transactions-statement",
+    "storage_bucket": "transactions-statement.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:775568792435:android:cc14bbe4519f8b096fc306",
+        "android_client_info": {
+          "package_name": "com.shamim.transactions_statement"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "775568792435-nqnu20oqv6pl601h8jnj3vhp4d8a9nlh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAs6WxilnJNwElKrS5bn-Gr03Ln-QFUV34"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "775568792435-nqnu20oqv6pl601h8jnj3vhp4d8a9nlh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

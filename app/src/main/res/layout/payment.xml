@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="5dp"
+    android:layout_marginVertical="3dp"
+    app:strokeWidth="0.1dp"
+    android:id="@+id/card"
+    app:cardCornerRadius="0dp"
+    app:strokeColor="@android:color/darker_gray">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/date"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:background="@color/purple_500"
+                android:gravity="center"
+                android:maxLines="1"
+                android:paddingHorizontal="7dp"
+                android:textColor="@android:color/white"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:id="@+id/date_full"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_toEndOf="@id/date"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="5dp"
+                android:gravity="start|center"
+                android:text="+8801849404323"
+                android:textColor="@android:color/black"
+                android:textSize="18sp"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:id="@+id/amount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:layout_toEndOf="@id/date_full"
+                android:gravity="end|center"
+                android:text="40,000"
+                android:textColor="@android:color/black"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:drawableEndCompat="@drawable/ic_taka_sign"
+                app:drawableTint="@android:color/black"
+                tools:ignore="HardcodedText" />
+
+        </RelativeLayout>
+
+</com.google.android.material.card.MaterialCardView>
