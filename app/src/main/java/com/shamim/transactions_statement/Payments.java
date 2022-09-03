@@ -1,19 +1,25 @@
 package com.shamim.transactions_statement;
 
 public class Payments {
-    String date;
-    int amount;
+    private int id;
+    private Object date;
+    private int amount;
 
-    public Payments(){
+    public Payments() {
 
     }
 
-    public Payments(String date, int amount) {
+    public Payments(int id, Object date, int amount) {
+        this.id = id;
         this.date = date;
         this.amount = amount;
     }
 
-    public String getDate() {
+    public int getId() {
+        return id;
+    }
+
+    public Object getDate() {
         return date;
     }
 

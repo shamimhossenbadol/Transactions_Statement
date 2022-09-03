@@ -1,19 +1,25 @@
 package com.shamim.transactions_statement;
 
 public class Transactions {
+    private int id;
     private int number;
     private int amount;
-    private String date;
+    private Object date;
     private String time;
 
     public Transactions() {
     }
 
-    public Transactions(int number, int amount, String date, String time) {
+    public Transactions(int id, int number, int amount, Object date, String time) {
+        this.id = id;
         this.number = number;
         this.amount = amount;
         this.date = date;
         this.time = time;
+    }
+
+    public int getId() {
+        return id;
     }
 
     public int getNumber() {
@@ -24,7 +30,7 @@ public class Transactions {
         return amount;
     }
 
-    public String getDate() {
+    public Object getDate() {
         return date;
     }
 

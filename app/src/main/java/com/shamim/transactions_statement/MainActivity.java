@@ -3,11 +3,16 @@ package com.shamim.transactions_statement;
 import android.annotation.SuppressLint;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Filter;
+import android.widget.Filterable;
+import android.widget.ProgressBar;
+import android.widget.SearchView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -28,16 +33,19 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
-    private ArrayList<Transactions> transactionsList;
-    private ArrayList<Payments> paymentsArrayList;
+    private List<Transactions> transactionsList;
+    private List<Payments> paymentsArrayList;
     private RecyclerView recyclerView;
+    private ProgressBar progressBar;
+    private TransactionsAdapter adapter;
     private TextInputEditText numberField, tra_amountField, pay_amountField;
-    private int number, tra_amount, pay_amount, total_tra_amount, total_pay_amount;
+    private int number, tra_amount, pay_amount, total_tra_amount, total_pay_amount, total_tra_id, total_pay_id;
 
     @SuppressLint("InflateParams")
     @Override
@@ -53,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         recyclerView = findViewById(R.id.recyclerView);
+        progressBar = findViewById(R.id.progressBar);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         getStatements();
     }
@@ -61,28 +70,33 @@ public class MainActivity extends AppCompatActivity {
     private void getStatements() {
         total_tra_amount = 0;
         total_pay_amount = 0;
+        total_tra_id = 0;
+        total_pay_id = 0;
         transactionsList = new ArrayList<>();
         paymentsArrayList = new ArrayList<>();
-        FirebaseFirestore.getInstance().collection("transactions").orderBy("date", Query.Direction.DESCENDING)
+        FirebaseFirestore.getInstance().collection("transactions").orderBy("id", Query.Direction.DESCENDING)
                 .get().addOnSuccessListener(queryDocumentSnapshots -> {
                     for (DocumentSnapshot snapshot : queryDocumentSnapshots) {
                         transactionsList.add(snapshot.toObject(Transactions.class));
+                        transactionsList.sort((o1, o2) -> 0);
                         Map<String, Object> map = snapshot.getData();
                         if (map != null) {
                             try {
+                                total_tra_id++;
                                 total_tra_amount = total_tra_amount + Integer.parseInt(Objects.requireNonNull(map.get("amount")).toString());
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
                         }
                     }
-                    FirebaseFirestore.getInstance().collection("payments").orderBy("date", Query.Direction.DESCENDING)
+                    FirebaseFirestore.getInstance().collection("payments").orderBy("id", Query.Direction.DESCENDING)
                             .get().addOnSuccessListener(queryPaymentSnapshots -> {
                                 for (DocumentSnapshot snapshot : queryPaymentSnapshots) {
                                     paymentsArrayList.add(snapshot.toObject(Payments.class));
                                     Map<String, Object> payments_data = snapshot.getData();
                                     if (payments_data != null) {
                                         try {
+                                            total_pay_id++;
                                             total_pay_amount = total_pay_amount + Integer.parseInt(Objects.requireNonNull(payments_data.get("amount")).toString());
                                         } catch (Exception e) {
                                             e.printStackTrace();
@@ -106,19 +120,35 @@ public class MainActivity extends AppCompatActivity {
                                     });
                                 }
                             });
-                    recyclerView.setAdapter(new TransactionsAdapter(transactionsList));
+                    adapter = new TransactionsAdapter(transactionsList);
+                    recyclerView.setAdapter(adapter);
+                    progressBar.setVisibility(View.GONE);
                 });
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.refresh_menu, menu);
+        getMenuInflater().inflate(R.menu.menu, menu);
+        MenuItem menuItem = menu.findItem(R.id.search);
+        SearchView searchView = (SearchView) menuItem.getActionView();
+        searchView.setInputType(InputType.TYPE_CLASS_NUMBER);
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                adapter.getFilter().filter(newText);
+                return true;
+            }
+        });
         return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == R.id.refresh) getStatements();
         if (item.getItemId() == R.id.add_new) {
             AlertDialog.Builder tra_builder = new AlertDialog.Builder(this);
             View view = getLayoutInflater().inflate(R.layout.add_transaction, null);
@@ -133,11 +163,12 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         number = Integer.parseInt(number_text);
                         tra_amount = Integer.parseInt(amount_text);
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy, HH:mm:ss", Locale.getDefault());
+                        int new_tra_id = total_tra_id + 1;
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy, HH:mm:ss", Locale.getDefault());
                         String date = dateFormat.format(Calendar.getInstance().getTime());
                         String time = new SimpleDateFormat("hh:mm:ss aa", Locale.getDefault()).format(new Date());
                         FirebaseFirestore.getInstance().collection("transactions").document()
-                                .set(new Transactions(number, tra_amount, date, time)).addOnSuccessListener(unused -> {
+                                .set(new Transactions(new_tra_id, number, tra_amount, date, time)).addOnSuccessListener(unused -> {
                                     tra_alertDialog.dismiss();
                                     getStatements();
                                 });
@@ -159,10 +190,11 @@ public class MainActivity extends AppCompatActivity {
                 if (!amount_text.isEmpty()) {
                     try {
                         pay_amount = Integer.parseInt(amount_text);
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
+                        int new_pay_id = total_pay_id + 1;
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
                         String date = dateFormat.format(Calendar.getInstance().getTime());
                         FirebaseFirestore.getInstance().collection("payments").document()
-                                .set(new Payments(date, pay_amount)).addOnSuccessListener(unused -> {
+                                .set(new Payments(new_pay_id, date, pay_amount)).addOnSuccessListener(unused -> {
                                     pay_alertDialog.dismiss();
                                     getStatements();
                                 });
@@ -176,11 +208,13 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public static class TransactionsAdapter extends RecyclerView.Adapter<TransactionsAdapter.ViewHolder> {
-        private final ArrayList<Transactions> transactionsList;
+    public static class TransactionsAdapter extends RecyclerView.Adapter<TransactionsAdapter.ViewHolder> implements Filterable {
+        private final List<Transactions> transactionsList;
+        private List<Transactions> mDataFiltered;
 
-        public TransactionsAdapter(ArrayList<Transactions> transactionsList) {
+        public TransactionsAdapter(List<Transactions> transactionsList) {
             this.transactionsList = transactionsList;
+            this.mDataFiltered = transactionsList;
         }
 
         @NonNull
@@ -192,8 +226,8 @@ public class MainActivity extends AppCompatActivity {
         @SuppressLint("SetTextI18n")
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            holder.id.setText(transactionsList.get(position).getDate() + "   |   " + transactionsList.get(position).getTime());
-            holder.date.setText(transactionsList.get(position).getDate().substring(0, 2));
+            holder.id.setText(mDataFiltered.get(position).getDate() + "   |   " + mDataFiltered.get(position).getTime());
+            holder.date.setText(mDataFiltered.get(position).getDate().toString().substring(0, 2));
             holder.cardView.setOnClickListener(v -> {
                 if (holder.id.getVisibility() == View.VISIBLE) {
                     holder.id.setVisibility(View.GONE);
@@ -201,14 +235,44 @@ public class MainActivity extends AppCompatActivity {
                     holder.id.setVisibility(View.VISIBLE);
                 }
             });
-            holder.number.setText("+880" + transactionsList.get(position).getNumber());
-            String amount = new DecimalFormat("#,##,###").format(transactionsList.get(position).getAmount());
+            holder.number.setText("+880" + mDataFiltered.get(position).getNumber());
+            String amount = new DecimalFormat("#,##,###").format(mDataFiltered.get(position).getAmount());
             holder.amount.setText(amount);
         }
 
         @Override
         public int getItemCount() {
-            return transactionsList.size();
+            return mDataFiltered.size();
+        }
+
+        @Override
+        public Filter getFilter() {
+            return new Filter() {
+                @Override
+                protected FilterResults performFiltering(CharSequence constraint) {
+                    if (constraint.toString().isEmpty()) {
+                        mDataFiltered = transactionsList;
+                    } else {
+                        List<Transactions> filteredTransactions = new ArrayList<>();
+                        for (Transactions newRow : mDataFiltered) {
+                            if (newRow.getNumber() == Integer.parseInt(constraint.toString())) {
+                                filteredTransactions.add(newRow);
+                            }
+                        }
+                        mDataFiltered = filteredTransactions;
+                    }
+                    FilterResults filterResults = new FilterResults();
+                    filterResults.values = filterResults;
+                    filterResults.count = mDataFiltered.size();
+                    return filterResults;
+                }
+
+                @SuppressLint("NotifyDataSetChanged")
+                @Override
+                protected void publishResults(CharSequence constraint, FilterResults results) {
+                    notifyDataSetChanged();
+                }
+            };
         }
 
         public static class ViewHolder extends RecyclerView.ViewHolder {
@@ -230,9 +294,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public static class PaymentAdapter extends RecyclerView.Adapter<PaymentAdapter.PaymentHolder> {
-        private final ArrayList<Payments> paymentsArrayList;
+        private final List<Payments> paymentsArrayList;
 
-        public PaymentAdapter(ArrayList<Payments> paymentsArrayList) {
+        public PaymentAdapter(List<Payments> paymentsArrayList) {
             this.paymentsArrayList = paymentsArrayList;
         }
 
@@ -244,8 +308,8 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(@NonNull PaymentHolder holder, int position) {
-            holder.date.setText(paymentsArrayList.get(position).getDate().substring(0, 2));
-            holder.full_date.setText(paymentsArrayList.get(position).getDate());
+            holder.date.setText(paymentsArrayList.get(position).getDate().toString().substring(0, 2));
+            holder.full_date.setText(paymentsArrayList.get(position).getDate().toString());
             String amount = new DecimalFormat("#,##,###").format(paymentsArrayList.get(position).getAmount());
             holder.amount.setText(amount);
         }
